@@ -8,9 +8,9 @@ const jwt = require("jsonwebtoken");
 const app = express();
 app.use(express.json());
 
-// 🔹 Enable CORS (Update to allow only your frontend URL in production)
+// 🔹 Enable CORS (Update in production)
 app.use(cors({
-    origin: "*",  // Change this to your frontend URL: "https://your-frontend.com"
+    origin: "https://your-frontend.com",  // ✅ Change this to your frontend URL
     methods: "GET,POST,PUT,DELETE",
     allowedHeaders: "Content-Type,Authorization"
 }));
@@ -103,13 +103,27 @@ app.post("/api/login", async (req, res) => {
     }
 });
 
-// 🔹 Protected Route: Get All Users (Requires JWT)
+// 🔹 Get All Users (Protected Route)
 app.get("/api/users", verifyToken, async (req, res) => {
     try {
         const users = await User.find({}, "-password"); // Exclude password
         res.json(users);
     } catch (error) {
         console.error("❌ Error fetching users:", error);
+        res.status(500).json({ error: "Server Error" });
+    }
+});
+
+// 🔹 Get Logged-in User Details (Protected Route)
+app.get("/api/user-details", verifyToken, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.userId).select("-password"); // Exclude password
+        if (!user) {
+            return res.status(404).json({ error: "User not found!" });
+        }
+        res.json(user);
+    } catch (error) {
+        console.error("❌ Error fetching user details:", error);
         res.status(500).json({ error: "Server Error" });
     }
 });
